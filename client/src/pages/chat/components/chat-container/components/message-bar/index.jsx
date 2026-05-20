@@ -15,7 +15,13 @@ const MessageBar = () => {
 
   const messageRef = useRef();
   const socket = useSocket();
-  const { selectedChatType, selectedChatData, userInfo } = useAppStore();
+  const {
+    selectedChatType,
+    selectedChatData,
+    userInfo,
+    setIsUploading,
+    setFileUploadProgress,
+  } = useAppStore();
   const [message, setMessage] = useState("");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
@@ -43,6 +49,14 @@ const MessageBar = () => {
         messageType: "text",
         fileUrl: undefined,
       });
+    } else if (selectedChatType === "channel") {
+      socket.emit("send-channel-message", {
+        sender: userInfo.id,
+        content: message,
+        messageType: "text",
+        fileUrl: undefined,
+        channelId: selectedChatData._id,
+      });
     }
     setMessage("");
   };
@@ -59,11 +73,16 @@ const MessageBar = () => {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
+        setIsUploading(true);
         const response = await apiClient.post(UPLOAD_FILE_ROUTE, formData, {
           withCredentials: true,
+          onUploadProgress: (data) => {
+            setFileUploadProgress(Math.round((100 * data.loaded) / data.total));
+          },
         });
         if (response.status === 200 && response.data) {
-          if(selectedChatType === "contact"){
+          setIsUploading(false);
+          if (selectedChatType === "contact") {
             socket.emit("sendMessage", {
               sender: userInfo.id,
               content: "",
@@ -71,11 +90,21 @@ const MessageBar = () => {
               messageType: "file",
               fileUrl: response.data.filePath,
             });
+          }
+          else if (selectedChatType === "channel") {
+            socket.emit("send-channel-message", {
+              sender: userInfo.id,
+              content: undefined,
+              messageType: "file",
+              fileUrl: response.data.filePath,
+              channelId: selectedChatData._id,
+            });
+          }
         }
       }
-    }
       console.log({ file });
-   } catch ({ error }) {
+    } catch ({ error }) {
+      setIsUploading(false);
       console.log({ error });
     }
   };
