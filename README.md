@@ -2,6 +2,10 @@
 
 A full-stack real-time chat application built using the MERN stack with WebSocket-based communication powered by Socket.io. The application supports instant messaging, channel-based conversations, file sharing, authentication, and live user interaction in a responsive and scalable environment.
 
+## Live Demo
+
+🔗 [View Project](https://syncat.netlify.app)
+
 ## Features
 
 - Real-time one-to-one and channel messaging
